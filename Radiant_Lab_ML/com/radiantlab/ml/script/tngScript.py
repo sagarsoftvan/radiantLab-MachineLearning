@@ -9,6 +9,10 @@ from sklearn.model_selection import KFold
 
 
 # create model function and configure input and output neurons (single fully connected hidden layer)
+from sklearn.pipeline import Pipeline
+from sklearn.preprocessing import StandardScaler
+
+
 def baseline_model():
     model = Sequential()
     # Input Layer with 8 Neurons and hidden layer with 8 neurons
@@ -44,10 +48,24 @@ numpy.random.seed(seed)
 estimator = KerasRegressor(build_fn=baseline_model, nb_epoch=100, batch_size=5, verbose=0)
 
 # The final step is to evaluate this baseline model. We will use 10-fold cross validation to evaluate the mode
-kfold = KFold(n_splits=10, random_state=seed)
+kfold = KFold(n_splits=5, random_state=seed)
 
 # The result reports the mean squared error including the average and standard deviation (average variance)
-# across all 10 folds of the cross validation evaluation
+# across all 5 folds of the cross validation evaluation
 results = cross_val_score(estimator, X_Feature_Vector, Y_Output_Vector, cv=kfold)
-#Print this code gives us an estimate of the model’s performance on the problem for unseen data.
 print("Results: %.2f (%.2f) MSE" % (results.mean(), results.std()))
+
+#Now scale the data and check its MSE Error
+#Evaluate model with standardized dataset these method scale data based on StandardScaler technique (sklearn.preprocessing.StandardScaler)
+numpy.random.seed(seed)
+estimators = []
+estimators.append(('standardize', StandardScaler()))
+estimators.append(('mlp', KerasRegressor(build_fn=baseline_model, nb_epoch=50, batch_size=5, verbose=0)))
+pipeline = Pipeline(estimators)
+kfold = KFold(n_splits=5, random_state=seed)
+
+results = cross_val_score(pipeline, X_Feature_Vector, Y_Output_Vector, cv=kfold)
+#Print the MSE for unseen data
+print("Standardized: %.2f (%.2f) MSE" % (results.mean(), results.std()))
+
+
