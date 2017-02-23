@@ -3,6 +3,9 @@ import pandas
 from keras.layers import Dense
 from keras.models import Sequential
 from keras.wrappers.scikit_learn import KerasRegressor
+from keras.wrappers.scikit_learn import KerasRegressor
+from sklearn.model_selection import cross_val_score
+from sklearn.model_selection import KFold
 
 
 # create model function and configure input and output neurons (single fully connected hidden layer)
@@ -24,14 +27,14 @@ dataset = dataframe._values
 
 # split into input (X) and output (Y) variables
 X_Feature_Vector = dataset[:, 0:8]
-Y_Feature_Vector = dataset[:, 8]
+Y_Output_Vector = dataset[:, 8]
 
 # Print Vector Size
 print "X Size", len(X_Feature_Vector)
-print "Y Size", len(Y_Feature_Vector)
+print "Y Size", len(Y_Output_Vector)
 
 # Validate Length of Both Vectors (Print error if length is not same)
-assert (len(X_Feature_Vector) == len(Y_Feature_Vector))
+assert (len(X_Feature_Vector) == len(Y_Output_Vector))
 
 # fix random seed for reproducibility
 seed = 7
@@ -39,3 +42,12 @@ numpy.random.seed(seed)
 
 # evaluate model with dataset passing with parameters
 estimator = KerasRegressor(build_fn=baseline_model, nb_epoch=100, batch_size=5, verbose=0)
+
+# The final step is to evaluate this baseline model. We will use 10-fold cross validation to evaluate the mode
+kfold = KFold(n_splits=10, random_state=seed)
+
+# The result reports the mean squared error including the average and standard deviation (average variance)
+# across all 10 folds of the cross validation evaluation
+results = cross_val_score(estimator, X_Feature_Vector, Y_Output_Vector, cv=kfold)
+#Print this code gives us an estimate of the model’s performance on the problem for unseen data.
+print("Results: %.2f (%.2f) MSE" % (results.mean(), results.std()))
