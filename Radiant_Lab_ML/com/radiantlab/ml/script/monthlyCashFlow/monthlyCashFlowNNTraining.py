@@ -1,8 +1,11 @@
 import numpy
 import pandas
+from keras.callbacks import ModelCheckpoint
 from keras.layers import Dense
 from keras.models import Sequential, model_from_json
 from sklearn.preprocessing import StandardScaler
+from sklearn.metrics import mean_squared_error
+import time
 import matplotlib.pyplot as plt
 inputFilePath = "/home/sagar/RadiantLab_Data/ML_Data/monthlyCashFlow_100B.csv"
 modelPath = "/home/sagar/RadiantLab_Data/ML_Data/model/monthlyCashFlow_100B_5March.h5";
@@ -30,19 +33,31 @@ print "Y Size", len(Y_Output_Vector)
 # Validate Length of Both Vectors (Print error if length is not same)
 assert (len(X_Feature_Vector) == len(Y_Output_Vector))
 
-# define base mode and NN Network [8 -> 8 -> 6 -> 1]
+# define base mode and NN Network [8 -> 8 -> 8 -> 6 -> 1]
 model = Sequential()
 model.add(Dense(8, input_dim=8, init='normal', activation='relu'))
+model.add(Dense(8, init='normal', activation='relu'))
 model.add(Dense(6, init='normal', activation='relu'))
 model.add(Dense(1, init='normal'))
 
+
+start = time.time()
+print "Start Time %f" %start
 # Compile model
 model.compile(loss='mean_squared_error', optimizer='adam', metrics=['accuracy'])
-model.fit(X_Feature_Vector, Y_Output_Vector, nb_epoch=15,batch_size=7, verbose=0)
+#model.fit(X_Feature_Vector, Y_Output_Vector, nb_epoch=90,batch_size=10, verbose=0)
+
+# Store the best checkpoint weight
+filepath="weights-improvement-{epoch:02d}-{val_acc:.2f}.hdf5"
+checkpoint = ModelCheckpoint(filepath, monitor='val_acc', verbose=1, save_best_only=True, mode='max')
+callbacks_list = [checkpoint]
+
+# Fit the model [Fit the model with epoch 0 to 150 and store weights which has higher accuracy]
+model.fit(X_Feature_Vector, Y_Output_Vector, validation_split=0.33, nb_epoch=150, batch_size=10, callbacks=callbacks_list, verbose=0)
 
 # evaluate the network
-loss, accuracy = model.evaluate(X_Feature_Vector, Y_Output_Vector)
-print("\nLoss: %.2f, Accuracy: %.2f%%" % (loss, accuracy*100))
+#loss, accuracy = model.evaluate(X_Feature_Vector, Y_Output_Vector)
+#print("\nLoss: %.2f, Accuracy: %.2f%%" % (loss, accuracy*100))
 
 # make predictions and its accuracy
 probabilities = model.predict(X_Feature_Vector)
@@ -58,3 +73,7 @@ model.save(modelPath)
 model_json = model.to_json()
 with open(modelJsonPath, "w") as json_file:
       json_file.write(model_json)
+
+end = time.time()
+timeTaken = end - start
+print "Total Time Taken:"
